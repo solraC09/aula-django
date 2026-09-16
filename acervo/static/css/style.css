@@ -99,6 +99,13 @@ tr:hover {
     margin-bottom: 2rem;
 }
 
+
+.botoes-inicial {
+    display: flex;
+    gap: 1rem;
+}
+
+
 .botao-principal {
     font-family: 'Georgia', 'Times New Roman', serif;
     font-size: 1.1rem;
@@ -113,4 +120,65 @@ tr:hover {
 
 .botao-principal:hover {
     background-color: #8b5e34;
+}
+
+
+.botao-secundario {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-size: 1.1rem;
+    background-color: transparent;
+    color: #5c3a21;
+    text-decoration: none;
+    padding: 0.8rem 2rem;
+    border-radius: 4px;
+    border: 2px solid #8b5e34;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.botao-secundario:hover {
+    background-color: #8b5e34;
+    color: #f4ecd8;
+}
+
+/* Formulário de cadastro */
+
+.pagina-form {
+    max-width: 500px;
+    margin: 3rem auto;
+    background-color: #fffdf7;
+    border: 1px solid #c9a876;
+    border-radius: 6px;
+    padding: 2rem;
+}
+
+.pagina-form h1 {
+    text-align: center;
+    border-bottom: none;
+}
+
+.form-livro p {
+    margin-bottom: 1rem;
+}
+
+.form-livro label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    color: #5c3a21;
+}
+
+.form-livro input,
+.form-livro select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #a97c50;
+    border-radius: 3px;
+    background-color: #fffdf7;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.form-livro button {
+    width: 100%;
+    margin-top: 0.5rem;
 }
