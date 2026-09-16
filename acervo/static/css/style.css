@@ -109,13 +109,14 @@ tr:hover {
 .botao-principal {
     font-family: 'Georgia', 'Times New Roman', serif;
     font-size: 1.1rem;
-    background-color: #5c3a21;
-    color: #f4ecd8;
+    background-color: transparent;
+    color: #5c3a21;
     text-decoration: none;
     padding: 0.8rem 2rem;
     border-radius: 4px;
     border: 2px solid #8b5e34;
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    margin-bottom: 20px;
 }
 
 .botao-principal:hover {
