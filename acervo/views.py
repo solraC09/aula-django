@@ -1,6 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from .models import Livro
+from .forms import LivroForm
 
 
 def inicio(request):
@@ -29,3 +30,14 @@ def lista_livros(request):
         'filtro_tipo': tipo,
         'filtro_categoria': categoria,
     })
+
+def novo_livro(request):
+    if request.method == 'POST':
+        form = LivroForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('lista')
+    else:
+        form = LivroForm()
+
+    return render(request, 'acervo/form.html', {'form': form})
