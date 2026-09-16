@@ -4,7 +4,7 @@ from .models import Livro
 
 
 def inicio(request):
-    return HttpResponse('Olá, acervo!')
+    return render(request, 'acervo/inicio.html')
 
 
 def lista_livros(request):
