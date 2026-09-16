@@ -115,14 +115,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = "static/"
-
-from dotenv import load_dotenv
-import os
-load_dotenv()
-DATABASES = {
-    'default': {
-    'NAME': os.getenv('DB_NAME'),
-    'PASSWORD': os.getenv('DB_PASSWORD'),
-    }
-}
+STATIC_URL = 'static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
