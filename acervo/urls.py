@@ -4,12 +4,6 @@ from . import views
 
 urlpatterns = [
     path('', views.inicio),
+    path('livros/',views.lista_livros,name='lista'),
 ]
 
-urlpatterns = [
-    path(
-    'livros/',
-    views.lista_livros,
-    name='lista'
-    ),
-]
