@@ -1,7 +1,26 @@
 from django.db import models
 
+from core.models import DaOrganizacao
 
-class Livro(models.Model):
+
+class Autor(DaOrganizacao):
+    nome = models.CharField(max_length=120)
+
+    class Meta:
+        ordering = ["nome"]
+        verbose_name_plural = "Autores"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organizacao", "nome"],
+                name="autor_unico_por_org",
+            ),
+        ]
+
+    def __str__(self):
+        return self.nome
+
+
+class Livro(DaOrganizacao):
 
     TIPO_CHOICES = [
         ('digital', 'Digital'),
@@ -22,7 +41,7 @@ class Livro(models.Model):
     ]
 
     titulo = models.CharField(max_length=200)
-    autor = models.CharField(max_length=100)
+    autor = models.ForeignKey(Autor, on_delete=models.PROTECT)
     ano = models.IntegerField()
     disponivel = models.BooleanField(default=True)
 
