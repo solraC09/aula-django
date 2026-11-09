@@ -9,3 +9,4 @@ __pycache__/
 *.sqlite3.bak
 backup_*.sqlite3
 dados_*.json
+db.sqlite3
