@@ -4,3 +4,8 @@ __pycache__/
 .env
 .vscode/
 .idea/
+
+# Backups e dumps de dados (não versionar)
+*.sqlite3.bak
+backup_*.sqlite3
+dados_*.json
