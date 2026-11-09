@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block titulo %}Autores{% endblock %}
+
+{% block conteudo %}
+<h1>Autores</h1>
+
+<form method="post">
+    {% csrf_token %}
+    <input type="text" name="nome" placeholder="Nome do autor" value="{{ form.nome.value|default:'' }}" required>
+    <button type="submit">Adicionar</button>
+</form>
+{% if form.nome.errors %}
+    <p class="erro">{{ form.nome.errors.0 }}</p>
+{% endif %}
+
+<table>
+    <tr>
+        <th>Nome</th>
+    </tr>
+    {% for autor in autores %}
+    <tr>
+        <td>{{ autor.nome }}</td>
+    </tr>
+    {% empty %}
+    <tr><td>Nenhum autor cadastrado.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

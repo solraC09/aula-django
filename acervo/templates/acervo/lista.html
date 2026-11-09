@@ -1,14 +1,12 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Acervo da Biblioteca</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+{% extends "base.html" %}
 
+{% block conteudo %}
 <h1>Acervo da Biblioteca</h1>
+
+<p>
+    <a href="{% url 'novo_livro' %}" class="botao-secundario">Cadastrar livro</a>
+    <a href="{% url 'autores' %}" class="botao-secundario">Autores</a>
+</p>
 
 <form method="get">
     <input type="text" name="nome" placeholder="Buscar por título" value="{{ filtro_nome }}">
@@ -39,6 +37,7 @@
         <th>Tipo</th>
         <th>Categoria</th>
         <th>Disponível</th>
+        <th>Ações</th>
     </tr>
     {% for livro in livros %}
     <tr>
@@ -48,11 +47,15 @@
         <td>{{ livro.get_tipo_display }}</td>
         <td>{{ livro.get_categoria_display }}</td>
         <td>{{ livro.disponivel|yesno:"Sim,Não" }}</td>
+        <td class="acoes">
+            <a href="{% url 'editar_livro' livro.pk %}">Editar</a>
+            {% if user.perfil.eh_admin %}
+                <a href="{% url 'excluir_livro' livro.pk %}">Excluir</a>
+            {% endif %}
+        </td>
     </tr>
     {% empty %}
-    <tr><td colspan="6">Nenhum livro encontrado.</td></tr>
+    <tr><td colspan="7">Nenhum livro encontrado.</td></tr>
     {% endfor %}
 </table>
-
-</body>
-</html>
+{% endblock %}

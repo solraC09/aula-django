@@ -1,18 +1,11 @@
-{% load static %}
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <title>Acervo da Biblioteca</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
-</head>
-<body>
+{% extends "base.html" %}
 
+{% block conteudo %}
 <div class="pagina-inicial">
-    <h1>Olá, acervo!</h1>
+    <h1>Acervo — {{ organizacao.nome }}</h1>
+    <p class="resumo">{{ total_livros }} livro{{ total_livros|pluralize }} cadastrado{{ total_livros|pluralize }}.</p>
     <a href="{% url 'lista' %}" class="botao-principal">Ver acervo</a>
-     <a href="{% url 'novo_livro' %}" class="botao-secundario">Cadastrar livro</a>
+    <a href="{% url 'novo_livro' %}" class="botao-secundario">Cadastrar livro</a>
+    <a href="{% url 'autores' %}" class="botao-secundario">Autores</a>
 </div>
-
-</body>
-</html>
+{% endblock %}

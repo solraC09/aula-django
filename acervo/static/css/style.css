@@ -183,3 +183,72 @@ tr:hover {
     width: 100%;
     margin-top: 0.5rem;
 }
+
+/* Barra do topo */
+
+.topo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: -2rem -2rem 2rem;
+    padding: 0.75rem 2rem;
+    background-color: #5c3a21;
+    color: #f4ecd8;
+}
+
+.topo-marca {
+    color: #f4ecd8;
+    font-weight: bold;
+    text-decoration: none;
+    margin-right: auto;
+}
+
+.topo-org {
+    font-style: italic;
+}
+
+.topo .form-sair {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.topo .form-sair button {
+    background-color: transparent;
+    border: 1px solid #f4ecd8;
+}
+
+/* Mensagens e links */
+
+.acoes a {
+    color: #5c3a21;
+    margin-right: 0.75rem;
+}
+
+.link-voltar {
+    display: inline-block;
+    margin-top: 1rem;
+    color: #5c3a21;
+}
+
+.erro {
+    color: #a12a1a;
+    font-weight: bold;
+}
+
+.resumo {
+    margin-bottom: 2rem;
+}
+
+.pagina-form .form-livro {
+    display: block;
+}
+
+.pagina-inicial .botao-secundario {
+    margin-bottom: 20px;
+}
+
+.link-voltar + .link-voltar {
+    margin-left: 1rem;
+}
