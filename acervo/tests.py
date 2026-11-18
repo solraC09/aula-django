@@ -175,6 +175,14 @@ class PapelTests(IsolamentoBase):
         self.assertRedirects(self.client.post(url), reverse('lista'))
         self.assertFalse(Livro.objects.filter(pk=self.livro_a.pk).exists())
 
+    def test_superusuario_com_papel_operador_pode_excluir(self):
+        dono = User.objects.create_superuser('dono', password='senha-teste-123')
+        Perfil.objects.create(usuario=dono, organizacao=self.org_a, papel=Perfil.OPERADOR)
+        self.client.force_login(dono)
+        self.assertContains(self.client.get(reverse('lista')), 'Excluir')
+        url = reverse('excluir_livro', args=[self.livro_a.pk])
+        self.assertRedirects(self.client.post(url), reverse('lista'))
+
     def test_operador_nao_pode_excluir_pela_api(self):
         self.client.force_login(self.operador_a)
         resposta = self.client.delete(f'/api/livros/{self.livro_a.pk}/')

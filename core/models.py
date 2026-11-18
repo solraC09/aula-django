@@ -55,4 +55,4 @@ class Perfil(models.Model):
 
     @property
     def eh_admin(self):
-        return self.papel == self.ADMIN
+        return self.papel == self.ADMIN or self.usuario.is_superuser

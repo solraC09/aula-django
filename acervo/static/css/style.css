@@ -244,9 +244,35 @@ tr:hover {
 
 /* Mensagens e links */
 
-.acoes a {
+.acoes {
+    white-space: nowrap;
+}
+
+.botao-tabela {
+    display: inline-block;
+    font-size: 0.85rem;
     color: #5c3a21;
-    margin-right: 0.75rem;
+    text-decoration: none;
+    padding: 0.3rem 0.8rem;
+    border: 1px solid #8b5e34;
+    border-radius: 3px;
+    margin-right: 0.4rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.botao-tabela:hover {
+    background-color: #8b5e34;
+    color: #f4ecd8;
+}
+
+.botao-perigo {
+    color: #a12a1a;
+    border-color: #a12a1a;
+}
+
+.botao-perigo:hover {
+    background-color: #a12a1a;
+    color: #fffdf7;
 }
 
 .erro {
