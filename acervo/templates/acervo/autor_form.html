@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block titulo %}Editar autor{% endblock %}
+
+{% block conteudo %}
+<div class="pagina-form">
+    <h1>Editar autor</h1>
+
+    <form method="post" class="form-livro">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="botao-principal">Salvar</button>
+    </form>
+
+    <div class="acoes-form">
+        <a href="{% url 'autores' %}" class="botao-secundario botao-pequeno">← Voltar para autores</a>
+    </div>
+</div>
+{% endblock %}

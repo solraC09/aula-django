@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block titulo %}Excluir autor{% endblock %}
+
+{% block conteudo %}
+<div class="pagina-form">
+    <h1>Excluir autor</h1>
+
+    {% if total_livros %}
+        <p class="erro">
+            Não é possível excluir <strong>{{ autor.nome }}</strong>:
+            {{ total_livros }} livro{{ total_livros|pluralize }} ainda usa{{ total_livros|pluralize:"m" }} este autor.
+        </p>
+        <p>Troque o autor desses livros antes de excluir.</p>
+    {% else %}
+        <p>Tem certeza que deseja excluir <strong>{{ autor.nome }}</strong>?</p>
+
+        <form method="post" class="form-livro">
+            {% csrf_token %}
+            <button type="submit" class="botao-principal">Sim, excluir</button>
+        </form>
+    {% endif %}
+
+    <div class="acoes-form">
+        <a href="{% url 'autores' %}" class="botao-secundario botao-pequeno">Cancelar</a>
+    </div>
+</div>
+{% endblock %}

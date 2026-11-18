@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -117,7 +118,36 @@ def autores(request):
         return redirect(request.get_full_path())
 
     return render(request, 'acervo/autores.html', {
-        'autores': Autor.objects.filter(organizacao=org),
+        'autores': Autor.objects.filter(organizacao=org).annotate(total_livros=Count('livro')),
         'form': form,
         'voltar_para': endereco_de_volta(request, 'lista'),
+    })
+
+
+@login_required
+def editar_autor(request, pk):
+    org = org_atual(request)
+    autor = get_object_or_404(Autor, pk=pk, organizacao=org)
+    form = AutorForm(request.POST or None, instance=autor, org=org)
+
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('autores')
+
+    return render(request, 'acervo/autor_form.html', {'form': form})
+
+
+@login_required
+def excluir_autor(request, pk):
+    exigir_admin(request)
+    autor = get_object_or_404(Autor, pk=pk, organizacao=org_atual(request))
+    total_livros = autor.livro_set.count()
+
+    if request.method == 'POST' and total_livros == 0:
+        autor.delete()
+        return redirect('autores')
+
+    return render(request, 'acervo/confirmar_exclusao_autor.html', {
+        'autor': autor,
+        'total_livros': total_livros,
     })

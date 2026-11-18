@@ -24,6 +24,11 @@ class AutorForm(forms.ModelForm):
 
     def clean_nome(self):
         nome = self.cleaned_data['nome'].strip()
-        if Autor.objects.filter(organizacao=self.org, nome__iexact=nome).exists():
+        repetido = (
+            Autor.objects.filter(organizacao=self.org, nome__iexact=nome)
+            .exclude(pk=self.instance.pk)
+            .exists()
+        )
+        if repetido:
             raise forms.ValidationError('Já existe um autor com esse nome.')
         return nome

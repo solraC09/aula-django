@@ -130,6 +130,60 @@ class AutorTests(IsolamentoBase):
         self.assertEqual(Autor.objects.filter(nome='Aluísio Azevedo').count(), 2)
 
 
+class EditarExcluirAutorTests(IsolamentoBase):
+    def test_editar_autor_proprio_funciona(self):
+        url = reverse('editar_autor', args=[self.autor_a.pk])
+        resposta = self.client.post(url, {'nome': 'Joaquim Maria Machado de Assis'})
+        self.assertRedirects(resposta, reverse('autores'))
+        self.autor_a.refresh_from_db()
+        self.assertEqual(self.autor_a.nome, 'Joaquim Maria Machado de Assis')
+
+    def test_editar_mantendo_o_mesmo_nome_nao_da_erro_de_repetido(self):
+        url = reverse('editar_autor', args=[self.autor_a.pk])
+        resposta = self.client.post(url, {'nome': 'Machado de Assis'})
+        self.assertRedirects(resposta, reverse('autores'))
+
+    def test_editar_para_nome_de_outro_autor_da_erro(self):
+        Autor.objects.create(organizacao=self.org_a, nome='Clarice Lispector')
+        url = reverse('editar_autor', args=[self.autor_a.pk])
+        resposta = self.client.post(url, {'nome': 'clarice lispector'})
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn('nome', resposta.context['form'].errors)
+
+    def test_editar_autor_de_outra_organizacao_da_404(self):
+        url = reverse('editar_autor', args=[self.autor_b.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url, {'nome': 'Hackeado'}).status_code, 404)
+
+    def test_excluir_autor_sem_livros(self):
+        autor = Autor.objects.create(organizacao=self.org_a, nome='Sem Livros')
+        url = reverse('excluir_autor', args=[autor.pk])
+        self.assertRedirects(self.client.post(url), reverse('autores'))
+        self.assertFalse(Autor.objects.filter(pk=autor.pk).exists())
+
+    def test_nao_exclui_autor_que_tem_livros(self):
+        url = reverse('excluir_autor', args=[self.autor_a.pk])
+        resposta = self.client.post(url)
+        self.assertContains(resposta, 'Não é possível excluir')
+        self.assertTrue(Autor.objects.filter(pk=self.autor_a.pk).exists())
+
+    def test_excluir_autor_de_outra_organizacao_da_404(self):
+        url = reverse('excluir_autor', args=[self.autor_b.pk])
+        self.assertEqual(self.client.post(url).status_code, 404)
+
+    def test_operador_nao_pode_excluir_autor(self):
+        autor = Autor.objects.create(organizacao=self.org_a, nome='Sem Livros')
+        self.client.force_login(self.operador_a)
+        url = reverse('excluir_autor', args=[autor.pk])
+        self.assertEqual(self.client.post(url).status_code, 403)
+        self.assertTrue(Autor.objects.filter(pk=autor.pk).exists())
+
+    def test_lista_de_autores_mostra_quantos_livros_cada_um_tem(self):
+        resposta = self.client.get(reverse('autores'))
+        autor = resposta.context['autores'].get(pk=self.autor_a.pk)
+        self.assertEqual(autor.total_livros, 1)
+
+
 class BotaoVoltarTests(IsolamentoBase):
     def test_autores_sem_next_volta_para_a_lista(self):
         resposta = self.client.get(reverse('autores'))
