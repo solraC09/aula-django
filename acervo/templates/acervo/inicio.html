@@ -5,7 +5,5 @@
     <h1>Acervo — {{ organizacao.nome }}</h1>
     <p class="resumo">{{ total_livros }} livro{{ total_livros|pluralize }} cadastrado{{ total_livros|pluralize }}.</p>
     <a href="{% url 'lista' %}" class="botao-principal">Ver acervo</a>
-    <a href="{% url 'novo_livro' %}" class="botao-secundario">Cadastrar livro</a>
-    <a href="{% url 'autores' %}" class="botao-secundario">Autores</a>
 </div>
 {% endblock %}
