@@ -5,15 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block titulo %}Acervo da Biblioteca{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=2">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3">
 </head>
 <body>
 
 {% if user.is_authenticated %}
 <header class="topo">
-    <a href="{% url 'inicio' %}" class="topo-marca">Acervo</a>
-    <span class="topo-org">{{ user.perfil.organizacao|default:"sem organização" }}</span>
-    <span class="topo-usuario">{{ user.username }} · {{ user.perfil.get_papel_display }}</span>
+    <a href="{% url 'inicio' %}" class="topo-marca">📚 Acervo</a>
+    <div class="topo-info">
+        <span class="topo-org">{{ user.perfil.organizacao|default:"sem organização" }}</span>
+        <span class="topo-usuario">{{ user.username }} · {{ user.perfil.get_papel_display }}</span>
+    </div>
     <form method="post" action="{% url 'logout' %}" class="form-sair">
         {% csrf_token %}
         <button type="submit">Sair</button>
