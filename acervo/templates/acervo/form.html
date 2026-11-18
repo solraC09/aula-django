@@ -12,7 +12,9 @@
         <button type="submit" class="botao-principal">Salvar</button>
     </form>
 
-    <a href="{% url 'autores' %}" class="link-voltar">Cadastrar novo autor</a>
-    <a href="{% url 'lista' %}" class="link-voltar">Voltar para o acervo</a>
+    <div class="acoes-form">
+        <a href="{% url 'autores' %}" class="botao-secundario botao-pequeno">Cadastrar novo autor</a>
+        <a href="{% url 'lista' %}" class="botao-secundario botao-pequeno">Voltar para o acervo</a>
+    </div>
 </div>
 {% endblock %}

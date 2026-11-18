@@ -226,12 +226,6 @@ tr:hover {
     margin-right: 0.75rem;
 }
 
-.link-voltar {
-    display: inline-block;
-    margin-top: 1rem;
-    color: #5c3a21;
-}
-
 .erro {
     color: #a12a1a;
     font-weight: bold;
@@ -249,6 +243,17 @@ tr:hover {
     margin-bottom: 20px;
 }
 
-.link-voltar + .link-voltar {
-    margin-left: 1rem;
+/* Botões abaixo dos formulários */
+
+.acoes-form {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.botao-pequeno {
+    font-size: 0.95rem;
+    padding: 0.5rem 1.2rem;
 }
