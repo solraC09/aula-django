@@ -130,6 +130,29 @@ class AutorTests(IsolamentoBase):
         self.assertEqual(Autor.objects.filter(nome='Aluísio Azevedo').count(), 2)
 
 
+class BotaoVoltarTests(IsolamentoBase):
+    def test_autores_sem_next_volta_para_a_lista(self):
+        resposta = self.client.get(reverse('autores'))
+        self.assertEqual(resposta.context['voltar_para'], reverse('lista'))
+
+    def test_autores_vindo_do_formulario_volta_para_o_formulario(self):
+        resposta = self.client.get(reverse('autores'), {'next': reverse('novo_livro')})
+        self.assertEqual(resposta.context['voltar_para'], reverse('novo_livro'))
+
+    def test_autores_ignora_next_para_outro_site(self):
+        resposta = self.client.get(reverse('autores'), {'next': 'https://site-malicioso.com/'})
+        self.assertEqual(resposta.context['voltar_para'], reverse('lista'))
+
+    def test_cadastrar_autor_mantem_o_caminho_de_volta(self):
+        url = reverse('autores') + '?next=' + reverse('novo_livro')
+        resposta = self.client.post(url, {'nome': 'Clarice Lispector'})
+        self.assertRedirects(resposta, url)
+
+    def test_lista_tem_botao_de_voltar_ao_inicio(self):
+        resposta = self.client.get(reverse('lista'))
+        self.assertContains(resposta, 'Voltar ao início')
+
+
 class PapelTests(IsolamentoBase):
     def test_operador_pode_cadastrar_livro(self):
         self.client.force_login(self.operador_a)

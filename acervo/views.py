@@ -1,5 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from core.utils import exigir_admin, org_atual
 
@@ -92,6 +94,17 @@ def excluir_livro(request, pk):
     return render(request, 'acervo/confirmar_exclusao.html', {'livro': livro})
 
 
+def endereco_de_volta(request, padrao):
+    destino = request.GET.get('next', '')
+    if url_has_allowed_host_and_scheme(
+        destino,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return destino
+    return reverse(padrao)
+
+
 @login_required
 def autores(request):
     org = org_atual(request)
@@ -101,9 +114,10 @@ def autores(request):
         autor = form.save(commit=False)
         autor.organizacao = org
         autor.save()
-        return redirect('autores')
+        return redirect(request.get_full_path())
 
     return render(request, 'acervo/autores.html', {
         'autores': Autor.objects.filter(organizacao=org),
         'form': form,
+        'voltar_para': endereco_de_volta(request, 'lista'),
     })
