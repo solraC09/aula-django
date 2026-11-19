@@ -107,10 +107,12 @@ tr:hover {
 
 
 .botao-principal {
+    display: inline-block;
+    cursor: pointer;
     font-family: 'Georgia', 'Times New Roman', serif;
     font-size: 1.1rem;
-    background-color: transparent;
-    color: #5c3a21;
+    background-color: #5c3a21;
+    color: #f4ecd8;
     text-decoration: none;
     padding: 0.8rem 2rem;
     border-radius: 4px;
@@ -121,6 +123,7 @@ tr:hover {
 
 .botao-principal:hover {
     background-color: #8b5e34;
+    color: #fffdf7;
 }
 
 
@@ -330,4 +333,57 @@ tr:hover {
     color: #a12a1a;
     font-size: 0.9rem;
     font-weight: bold;
+}
+
+/* Mensagens de confirmação */
+
+.mensagens {
+    max-width: 700px;
+    margin: 0 auto 1.5rem;
+}
+
+.mensagem {
+    margin: 0 0 0.5rem;
+    padding: 0.75rem 1rem;
+    border-left: 4px solid #8b5e34;
+    border-radius: 3px;
+    background-color: #fffdf7;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.mensagem-success {
+    border-left-color: #3d7a46;
+    background-color: #eaf4e7;
+    color: #24502b;
+}
+
+.mensagem-error {
+    border-left-color: #a12a1a;
+    background-color: #f9e7e4;
+    color: #7a1f13;
+}
+
+/* Paginação */
+
+.paginacao {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+/* Páginas de erro */
+
+.pagina-erro {
+    max-width: 500px;
+    margin: 3rem auto;
+    text-align: center;
+}
+
+.codigo-erro {
+    font-size: 4rem;
+    font-weight: bold;
+    color: #8b5e34;
+    margin: 0;
 }

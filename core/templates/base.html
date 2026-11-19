@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block titulo %}Acervo da Biblioteca{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=6">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=7">
 </head>
 <body>
 
@@ -21,6 +21,14 @@
         <button type="submit">Sair</button>
     </form>
 </header>
+{% endif %}
+
+{% if messages %}
+<div class="mensagens">
+    {% for message in messages %}
+        <p class="mensagem mensagem-{{ message.tags }}">{{ message }}</p>
+    {% endfor %}
+</div>
 {% endif %}
 
 {% block conteudo %}{% endblock %}
