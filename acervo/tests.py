@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
+from django.contrib.messages import get_messages
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from core.models import Organizacao, Perfil
 
@@ -316,6 +318,98 @@ class DonoDoLivroTests(IsolamentoBase):
         self.assertEqual(resposta.status_code, 403)
         self.livro_a.refresh_from_db()
         self.assertEqual(self.livro_a.titulo, 'Dom Casmurro')
+
+
+class MensagensTests(IsolamentoBase):
+    def mensagens(self, resposta):
+        return [str(m) for m in get_messages(resposta.wsgi_request)]
+
+    def test_cadastrar_livro_mostra_mensagem(self):
+        resposta = self.client.post(reverse('novo_livro'), self.dados_livro())
+        self.assertIn('Livro "Livro Novo" cadastrado.', self.mensagens(resposta))
+
+    def test_editar_livro_mostra_mensagem(self):
+        url = reverse('editar_livro', args=[self.livro_a.pk])
+        resposta = self.client.post(url, self.dados_livro(titulo='Dom Casmurro'))
+        self.assertIn('Livro "Dom Casmurro" atualizado.', self.mensagens(resposta))
+
+    def test_excluir_livro_mostra_mensagem(self):
+        url = reverse('excluir_livro', args=[self.livro_a.pk])
+        resposta = self.client.post(url)
+        self.assertIn('Livro "Dom Casmurro" excluído.', self.mensagens(resposta))
+
+    def test_cadastrar_autor_mostra_mensagem(self):
+        resposta = self.client.post(reverse('autores'), {'nome': 'Clarice Lispector'})
+        self.assertIn('Autor "Clarice Lispector" cadastrado.', self.mensagens(resposta))
+
+    def test_mensagem_aparece_na_pagina_seguinte(self):
+        resposta = self.client.post(reverse('novo_livro'), self.dados_livro(), follow=True)
+        self.assertContains(resposta, 'class="mensagem mensagem-success"')
+
+
+class AnoTests(IsolamentoBase):
+    def test_ano_antes_de_1000_da_erro(self):
+        resposta = self.client.post(reverse('novo_livro'), self.dados_livro(ano=999))
+        self.assertIn('ano', resposta.context['form'].errors)
+        self.assertFalse(Livro.objects.filter(titulo='Livro Novo').exists())
+
+    def test_ano_no_futuro_da_erro(self):
+        ano_que_vem = timezone.now().year + 1
+        resposta = self.client.post(reverse('novo_livro'), self.dados_livro(ano=ano_que_vem))
+        self.assertIn('ano', resposta.context['form'].errors)
+
+    def test_ano_atual_e_aceito(self):
+        resposta = self.client.post(reverse('novo_livro'), self.dados_livro(ano=timezone.now().year))
+        self.assertRedirects(resposta, reverse('lista'))
+
+    def test_api_recusa_ano_no_futuro(self):
+        resposta = self.client.post(
+            '/api/livros/', self.dados_livro(ano=timezone.now().year + 1),
+            content_type='application/json',
+        )
+        self.assertEqual(resposta.status_code, 400)
+        self.assertIn('ano', resposta.json())
+
+
+class PaginasDeErroTests(IsolamentoBase):
+    def test_403_usa_a_pagina_do_sistema(self):
+        sem_perfil = User.objects.create_user('carlos', password='senha-teste-123')
+        self.client.force_login(sem_perfil)
+        resposta = self.client.get(reverse('lista'))
+        self.assertEqual(resposta.status_code, 403)
+        self.assertContains(resposta, 'Acesso negado', status_code=403)
+        self.assertContains(resposta, 'não está ligado a nenhuma organização', status_code=403)
+
+    def test_404_usa_a_pagina_do_sistema(self):
+        resposta = self.client.get(reverse('editar_livro', args=[999999]))
+        self.assertContains(resposta, 'Página não encontrada', status_code=404)
+
+
+class PaginacaoTests(IsolamentoBase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        Livro.objects.bulk_create([
+            Livro(organizacao=cls.org_a, titulo=f'Livro {n:02d}', autor=cls.autor_a, ano=2000)
+            for n in range(1, 26)
+        ])
+
+    def test_primeira_pagina_tem_20_livros(self):
+        resposta = self.client.get(reverse('lista'))
+        self.assertEqual(len(resposta.context['livros']), 20)
+        self.assertEqual(resposta.context['pagina'].paginator.num_pages, 2)
+
+    def test_segunda_pagina_tem_o_resto(self):
+        resposta = self.client.get(reverse('lista'), {'pagina': 2})
+        self.assertEqual(len(resposta.context['livros']), 6)
+
+    def test_pagina_invalida_mostra_a_primeira(self):
+        resposta = self.client.get(reverse('lista'), {'pagina': 'abc'})
+        self.assertEqual(resposta.context['pagina'].number, 1)
+
+    def test_links_da_paginacao_mantem_os_filtros(self):
+        resposta = self.client.get(reverse('lista'), {'nome': 'Livro'})
+        self.assertContains(resposta, '?nome=Livro&pagina=2')
 
 
 class IsolamentoApiTests(IsolamentoBase):
