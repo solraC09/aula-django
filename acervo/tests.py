@@ -248,6 +248,76 @@ class PapelTests(IsolamentoBase):
         self.assertEqual(resposta.status_code, 204)
 
 
+class DonoDoLivroTests(IsolamentoBase):
+    def livro_do_operador(self):
+        return Livro.objects.create(
+            organizacao=self.org_a, titulo='Livro do Otto',
+            autor=self.autor_a, ano=2001, cadastrado_por=self.operador_a,
+        )
+
+    def test_cadastrar_livro_guarda_quem_cadastrou(self):
+        self.client.force_login(self.operador_a)
+        self.client.post(reverse('novo_livro'), self.dados_livro())
+        livro = Livro.objects.get(titulo='Livro Novo')
+        self.assertEqual(livro.cadastrado_por, self.operador_a)
+
+    def test_quem_cadastrou_pode_editar(self):
+        livro = self.livro_do_operador()
+        self.client.force_login(self.operador_a)
+        url = reverse('editar_livro', args=[livro.pk])
+        resposta = self.client.post(url, self.dados_livro(titulo='Livro do Otto (2a ed.)'))
+        self.assertRedirects(resposta, reverse('lista'))
+        livro.refresh_from_db()
+        self.assertEqual(livro.titulo, 'Livro do Otto (2a ed.)')
+        self.assertEqual(livro.cadastrado_por, self.operador_a)
+
+    def test_quem_cadastrou_pode_excluir(self):
+        livro = self.livro_do_operador()
+        self.client.force_login(self.operador_a)
+        url = reverse('excluir_livro', args=[livro.pk])
+        self.assertRedirects(self.client.post(url), reverse('lista'))
+        self.assertFalse(Livro.objects.filter(pk=livro.pk).exists())
+
+    def test_operador_nao_pode_editar_livro_de_outra_pessoa(self):
+        self.client.force_login(self.operador_a)
+        url = reverse('editar_livro', args=[self.livro_a.pk])
+        self.assertEqual(self.client.get(url).status_code, 403)
+        self.assertEqual(self.client.post(url, self.dados_livro()).status_code, 403)
+
+    def test_admin_pode_editar_livro_de_qualquer_pessoa(self):
+        livro = self.livro_do_operador()
+        url = reverse('editar_livro', args=[livro.pk])
+        self.assertEqual(self.client.get(url).status_code, 200)
+
+    def test_lista_mostra_botoes_so_nos_livros_proprios(self):
+        livro = self.livro_do_operador()
+        self.client.force_login(self.operador_a)
+        resposta = self.client.get(reverse('lista'))
+        self.assertContains(resposta, reverse('excluir_livro', args=[livro.pk]))
+        self.assertNotContains(resposta, reverse('excluir_livro', args=[self.livro_a.pk]))
+        self.assertNotContains(resposta, reverse('editar_livro', args=[self.livro_a.pk]))
+
+    def test_api_criar_guarda_quem_cadastrou(self):
+        self.client.force_login(self.operador_a)
+        resposta = self.client.post('/api/livros/', self.dados_livro(), content_type='application/json')
+        self.assertEqual(resposta.status_code, 201)
+        self.assertEqual(resposta.json()['cadastrado_por'], 'otto')
+
+    def test_api_quem_cadastrou_pode_excluir(self):
+        livro = self.livro_do_operador()
+        self.client.force_login(self.operador_a)
+        self.assertEqual(self.client.delete(f'/api/livros/{livro.pk}/').status_code, 204)
+
+    def test_api_operador_nao_pode_editar_livro_de_outra_pessoa(self):
+        self.client.force_login(self.operador_a)
+        resposta = self.client.patch(
+            f'/api/livros/{self.livro_a.pk}/', {'titulo': 'Mudado'}, content_type='application/json',
+        )
+        self.assertEqual(resposta.status_code, 403)
+        self.livro_a.refresh_from_db()
+        self.assertEqual(self.livro_a.titulo, 'Dom Casmurro')
+
+
 class IsolamentoApiTests(IsolamentoBase):
     def test_api_lista_so_livros_da_propria_organizacao(self):
         resposta = self.client.get('/api/livros/')

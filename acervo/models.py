@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from core.models import DaOrganizacao
@@ -55,6 +56,19 @@ class Livro(DaOrganizacao):
         choices=CATEGORIA_CHOICES,
         default='000',
     )
+    cadastrado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='livros_cadastrados',
+    )
 
     def __str__(self):
         return self.titulo
+
+    def pode_ser_alterado_por(self, usuario):
+        perfil = getattr(usuario, 'perfil', None)
+        if perfil is not None and perfil.eh_admin:
+            return True
+        return self.cadastrado_por_id is not None and self.cadastrado_por_id == usuario.pk

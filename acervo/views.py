@@ -1,4 +1,5 @@
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -25,7 +26,7 @@ def lista_livros(request):
     org = org_atual(request)
     livros = (
         Livro.objects.filter(organizacao=org)
-        .select_related('autor')
+        .select_related('autor', 'cadastrado_por')
         .order_by('titulo')
     )
 
@@ -39,6 +40,10 @@ def lista_livros(request):
         livros = livros.filter(tipo=tipo)
     if categoria:
         livros = livros.filter(categoria=categoria)
+
+    livros = list(livros)
+    for livro in livros:
+        livro.pode_alterar = livro.pode_ser_alterado_por(request.user)
 
     return render(request, 'acervo/lista.html', {
         'livros': livros,
@@ -58,6 +63,7 @@ def novo_livro(request):
     if request.method == 'POST' and form.is_valid():
         livro = form.save(commit=False)
         livro.organizacao = org
+        livro.cadastrado_por = request.user
         livro.save()
         return redirect('lista')
 
@@ -67,10 +73,17 @@ def novo_livro(request):
     })
 
 
+def buscar_livro_alteravel(request, pk, org):
+    livro = get_object_or_404(Livro, pk=pk, organizacao=org)
+    if not livro.pode_ser_alterado_por(request.user):
+        raise PermissionDenied('Só quem cadastrou o livro ou um administrador pode alterá-lo.')
+    return livro
+
+
 @login_required
 def editar_livro(request, pk):
     org = org_atual(request)
-    livro = get_object_or_404(Livro, pk=pk, organizacao=org)
+    livro = buscar_livro_alteravel(request, pk, org)
     form = LivroForm(request.POST or None, instance=livro, org=org)
 
     if request.method == 'POST' and form.is_valid():
@@ -85,8 +98,7 @@ def editar_livro(request, pk):
 
 @login_required
 def excluir_livro(request, pk):
-    exigir_admin(request)
-    livro = get_object_or_404(Livro, pk=pk, organizacao=org_atual(request))
+    livro = buscar_livro_alteravel(request, pk, org_atual(request))
 
     if request.method == 'POST':
         livro.delete()
