@@ -94,6 +94,10 @@ class CadastroTests(TestCase):
         self.assertFalse(usuario.is_staff)
         self.assertEqual(int(self.client.session["_auth_user_id"]), usuario.pk)
 
+    def test_cadastro_mostra_mensagem_de_boas_vindas(self):
+        resposta = self.client.post(reverse("cadastro"), self.dados(), follow=True)
+        self.assertContains(resposta, "Conta criada. Bem-vindo(a), nova!")
+
     def test_cadastro_cria_a_biblioteca_se_nao_existir(self):
         self.client.post(reverse("cadastro"), self.dados())
         self.assertEqual(Organizacao.objects.count(), 1)
