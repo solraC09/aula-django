@@ -22,9 +22,9 @@ mas cada uma só vê os próprios livros.
 
        python manage.py migrate
 
-5. Criar um usuário administrador:
+5. Criar o administrador (usa ADMIN_USUARIO e ADMIN_SENHA do .env):
 
-       python manage.py createsuperuser
+       python manage.py garantir_admin
 
 6. Ligar o servidor:
 
