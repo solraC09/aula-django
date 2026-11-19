@@ -1,7 +1,19 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils import timezone
 
 from core.models import DaOrganizacao
+
+
+ANO_MINIMO = 1000
+
+
+def validar_ano_nao_futuro(valor):
+    ano_atual = timezone.now().year
+    if valor > ano_atual:
+        raise ValidationError(f"O ano não pode ser maior que {ano_atual}.")
 
 
 class Autor(DaOrganizacao):
@@ -43,7 +55,9 @@ class Livro(DaOrganizacao):
 
     titulo = models.CharField(max_length=200)
     autor = models.ForeignKey(Autor, on_delete=models.PROTECT)
-    ano = models.IntegerField()
+    ano = models.IntegerField(
+        validators=[MinValueValidator(ANO_MINIMO), validar_ano_nao_futuro],
+    )
     disponivel = models.BooleanField(default=True)
 
     tipo = models.CharField(
