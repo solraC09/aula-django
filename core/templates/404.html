@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block titulo %}Página não encontrada{% endblock %}
+
+{% block conteudo %}
+<div class="pagina-erro">
+    <p class="codigo-erro">404</p>
+    <h1>Página não encontrada</h1>
+    <p>O endereço que você abriu não existe ou foi removido.</p>
+    <a href="{% url 'inicio' %}" class="botao-principal">Voltar ao início</a>
+</div>
+{% endblock %}
