@@ -5,6 +5,7 @@ from django.contrib.admin.sites import site
 from django.contrib.auth import get_user_model
 from django.core.management import CommandError, call_command
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 
 from .models import Organizacao, Perfil
 
@@ -66,3 +67,51 @@ class GarantirAdminTests(TestCase):
         model_admin = site._registry[User]
         self.assertFalse(model_admin.has_delete_permission(request, admin))
         self.assertTrue(model_admin.has_delete_permission(request, outro))
+
+
+class CadastroTests(TestCase):
+    def dados(self, **extra):
+        dados = {
+            "username": "nova",
+            "email": "nova@exemplo.com",
+            "password1": "senha-bem-forte-123",
+            "password2": "senha-bem-forte-123",
+        }
+        dados.update(extra)
+        return dados
+
+    def test_pagina_de_cadastro_abre(self):
+        self.assertEqual(self.client.get(reverse("cadastro")).status_code, 200)
+
+    def test_cadastro_cria_operador_na_biblioteca_principal_e_faz_login(self):
+        org = Organizacao.objects.create(nome="Biblioteca Central")
+        resposta = self.client.post(reverse("cadastro"), self.dados())
+        self.assertRedirects(resposta, reverse("inicio"))
+
+        usuario = User.objects.get(username="nova")
+        self.assertEqual(usuario.perfil.organizacao, org)
+        self.assertEqual(usuario.perfil.papel, Perfil.OPERADOR)
+        self.assertFalse(usuario.is_staff)
+        self.assertEqual(int(self.client.session["_auth_user_id"]), usuario.pk)
+
+    def test_cadastro_cria_a_biblioteca_se_nao_existir(self):
+        self.client.post(reverse("cadastro"), self.dados())
+        self.assertEqual(Organizacao.objects.count(), 1)
+
+    def test_usuario_repetido_da_erro(self):
+        User.objects.create_user("nova", password="x")
+        resposta = self.client.post(reverse("cadastro"), self.dados())
+        self.assertEqual(resposta.status_code, 200)
+        self.assertIn("username", resposta.context["form"].errors)
+
+    def test_senhas_diferentes_dao_erro(self):
+        resposta = self.client.post(reverse("cadastro"), self.dados(password2="outra-senha-456"))
+        self.assertEqual(resposta.status_code, 200)
+        self.assertFalse(User.objects.filter(username="nova").exists())
+
+    def test_quem_ja_esta_logado_vai_para_o_inicio(self):
+        usuario = User.objects.create_user("logado", password="x")
+        self.client.force_login(usuario)
+        self.assertRedirects(
+            self.client.get(reverse("cadastro")), reverse("inicio"), fetch_redirect_response=False,
+        )

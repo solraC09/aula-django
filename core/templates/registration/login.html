@@ -16,5 +16,9 @@
         <input type="hidden" name="next" value="{{ next }}">
         <button type="submit" class="botao-principal">Entrar</button>
     </form>
+
+    <p class="troca-conta">
+        Não tem conta? <a href="{% url 'cadastro' %}">Criar conta</a>
+    </p>
 </div>
 {% endblock %}

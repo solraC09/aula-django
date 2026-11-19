@@ -93,6 +93,7 @@ Para trocar para PostgreSQL:
 - /              página inicial
 - /livros/       lista de livros
 - /autores/      lista e cadastro de autores
+- /contas/cadastro/   criar conta
 - /admin/        painel do administrador
 - /api/livros/   API em JSON
 
