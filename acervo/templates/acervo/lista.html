@@ -61,6 +61,18 @@
     {% endfor %}
 </table>
 
+{% if pagina.paginator.num_pages > 1 %}
+<nav class="paginacao">
+    {% if pagina.has_previous %}
+        <a href="?{% if filtros %}{{ filtros }}&{% endif %}pagina={{ pagina.previous_page_number }}" class="botao-tabela">← Anterior</a>
+    {% endif %}
+    <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+    {% if pagina.has_next %}
+        <a href="?{% if filtros %}{{ filtros }}&{% endif %}pagina={{ pagina.next_page_number }}" class="botao-tabela">Próxima →</a>
+    {% endif %}
+</nav>
+{% endif %}
+
 <div class="acoes-form">
     <a href="{% url 'inicio' %}" class="botao-secundario botao-pequeno">← Voltar ao início</a>
 </div>

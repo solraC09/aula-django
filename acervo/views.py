@@ -1,5 +1,7 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -9,6 +11,8 @@ from core.utils import exigir_admin, org_atual
 
 from .forms import AutorForm, LivroForm
 from .models import Autor, Livro
+
+LIVROS_POR_PAGINA = 20
 
 
 @login_required
@@ -41,12 +45,17 @@ def lista_livros(request):
     if categoria:
         livros = livros.filter(categoria=categoria)
 
-    livros = list(livros)
-    for livro in livros:
+    pagina = Paginator(livros, LIVROS_POR_PAGINA).get_page(request.GET.get('pagina'))
+    for livro in pagina:
         livro.pode_alterar = livro.pode_ser_alterado_por(request.user)
 
+    filtros = request.GET.copy()
+    filtros.pop('pagina', None)
+
     return render(request, 'acervo/lista.html', {
-        'livros': livros,
+        'livros': pagina,
+        'pagina': pagina,
+        'filtros': filtros.urlencode(),
         'tipos': Livro.TIPO_CHOICES,
         'categorias': Livro.CATEGORIA_CHOICES,
         'filtro_nome': nome,
@@ -65,6 +74,7 @@ def novo_livro(request):
         livro.organizacao = org
         livro.cadastrado_por = request.user
         livro.save()
+        messages.success(request, f'Livro "{livro.titulo}" cadastrado.')
         return redirect('lista')
 
     return render(request, 'acervo/form.html', {
@@ -87,7 +97,8 @@ def editar_livro(request, pk):
     form = LivroForm(request.POST or None, instance=livro, org=org)
 
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        livro = form.save()
+        messages.success(request, f'Livro "{livro.titulo}" atualizado.')
         return redirect('lista')
 
     return render(request, 'acervo/form.html', {
@@ -101,7 +112,9 @@ def excluir_livro(request, pk):
     livro = buscar_livro_alteravel(request, pk, org_atual(request))
 
     if request.method == 'POST':
+        titulo = livro.titulo
         livro.delete()
+        messages.success(request, f'Livro "{titulo}" excluído.')
         return redirect('lista')
 
     return render(request, 'acervo/confirmar_exclusao.html', {'livro': livro})
@@ -127,6 +140,7 @@ def autores(request):
         autor = form.save(commit=False)
         autor.organizacao = org
         autor.save()
+        messages.success(request, f'Autor "{autor.nome}" cadastrado.')
         return redirect(request.get_full_path())
 
     return render(request, 'acervo/autores.html', {
@@ -143,7 +157,8 @@ def editar_autor(request, pk):
     form = AutorForm(request.POST or None, instance=autor, org=org)
 
     if request.method == 'POST' and form.is_valid():
-        form.save()
+        autor = form.save()
+        messages.success(request, f'Autor "{autor.nome}" atualizado.')
         return redirect('autores')
 
     return render(request, 'acervo/autor_form.html', {'form': form})
@@ -156,7 +171,9 @@ def excluir_autor(request, pk):
     total_livros = autor.livro_set.count()
 
     if request.method == 'POST' and total_livros == 0:
+        nome = autor.nome
         autor.delete()
+        messages.success(request, f'Autor "{nome}" excluído.')
         return redirect('autores')
 
     return render(request, 'acervo/confirmar_exclusao_autor.html', {

@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth import login
 from django.db import transaction
 from django.shortcuts import redirect, render
@@ -22,6 +23,7 @@ def cadastro(request):
                 papel=Perfil.OPERADOR,
             )
         login(request, usuario)
+        messages.success(request, f"Conta criada. Bem-vindo(a), {usuario.username}!")
         return redirect("inicio")
 
     return render(request, "registration/cadastro.html", {"form": form})
