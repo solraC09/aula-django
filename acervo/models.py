@@ -77,6 +77,12 @@ class Livro(DaOrganizacao):
         blank=True,
         related_name='livros_cadastrados',
     )
+    cadastrado_em = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['cadastrado_em']),
+        ]
 
     def __str__(self):
         return self.titulo
