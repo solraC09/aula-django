@@ -32,3 +32,21 @@ class AutorForm(forms.ModelForm):
         if repetido:
             raise forms.ValidationError('Já existe um autor com esse nome.')
         return nome
+
+
+class PeriodoForm(forms.Form):
+    inicio = forms.DateField(
+        label='Início', required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+    fim = forms.DateField(
+        label='Fim', required=False,
+        widget=forms.DateInput(attrs={'type': 'date'}),
+    )
+
+    def clean(self):
+        dados = super().clean()
+        inicio, fim = dados.get('inicio'), dados.get('fim')
+        if inicio and fim and inicio > fim:
+            raise forms.ValidationError('A data de início não pode ser depois da data de fim.')
+        return dados
