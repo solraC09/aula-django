@@ -1,8 +1,12 @@
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from core.permissions import DonoOuAdmin
-from core.utils import org_atual
+from core.utils import org_atual, perfil_atual
+
+from .dashboard import filtrar_periodo, livros_da_organizacao, montar_dashboard
 
 from .models import Livro
 from .serializers import LivroSerializer
@@ -31,3 +35,14 @@ class LivroListCreate(DaOrganizacaoMixin, generics.ListCreateAPIView):
 
 class LivroDetail(DaOrganizacaoMixin, generics.RetrieveUpdateDestroyAPIView):
     serializer_class = LivroSerializer
+
+
+class DashboardApi(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        org = org_atual(request)
+        form, base = filtrar_periodo(request.query_params, livros_da_organizacao(org))
+        if not form.is_valid():
+            return Response(form.errors, status=400)
+        return Response(montar_dashboard(base, com_series=perfil_atual(request).eh_admin))
