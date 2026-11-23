@@ -5,13 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block titulo %}Acervo da Biblioteca{% endblock %}</title>
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=7">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=8">
 </head>
 <body>
 
 {% if user.is_authenticated %}
 <header class="topo">
     <a href="{% url 'inicio' %}" class="topo-marca">📚 Acervo</a>
+    <nav class="topo-nav">
+        <a href="{% url 'lista' %}">Livros</a>
+        <a href="{% url 'autores' %}">Autores</a>
+        <a href="{% url 'dashboard' %}">Dashboard</a>
+    </nav>
     <div class="topo-info">
         <span class="topo-org">{{ user.perfil.organizacao|default:"sem organização" }}</span>
         <span class="topo-usuario">{{ user.username }} · {{ user.perfil.get_papel_display }}</span>

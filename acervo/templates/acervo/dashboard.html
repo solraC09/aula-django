@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block titulo %}Dashboard{% endblock %}
+
+{% block conteudo %}
+<div class="dashboard">
+    <h1>Dashboard — {{ organizacao.nome }}</h1>
+
+    <form method="get" class="filtro-periodo">
+        {{ form.inicio.label_tag }} {{ form.inicio }}
+        {{ form.fim.label_tag }} {{ form.fim }}
+        <button type="submit">Filtrar</button>
+        <a href="{% url 'dashboard' %}" class="botao-tabela">Limpar</a>
+        {% if mostra_series %}
+            <a href="{% url 'exportar_csv' %}{% if filtros %}?{{ filtros }}{% endif %}" class="botao-tabela exportar">Exportar CSV</a>
+        {% endif %}
+    </form>
+
+    {% if form.errors %}
+        <p class="erro">
+            {% if form.non_field_errors %}{{ form.non_field_errors.0 }}{% else %}Data inválida.{% endif %}
+            O filtro foi ignorado.
+        </p>
+    {% endif %}
+
+    <div class="cards">
+        <div class="card">
+            <small>Livros</small>
+            <strong>{{ indicadores.total }}</strong>
+        </div>
+        <div class="card">
+            <small>Disponíveis</small>
+            <strong>{{ indicadores.disponiveis }}</strong>
+        </div>
+        <div class="card">
+            <small>Indisponíveis</small>
+            <strong>{{ indicadores.indisponiveis }}</strong>
+        </div>
+        <div class="card">
+            <small>Autores</small>
+            <strong>{{ indicadores.autores }}</strong>
+        </div>
+    </div>
+
+    <div class="paineis">
+        {% if mostra_series %}
+        <section class="painel painel-largo">
+            <h2>Livros cadastrados por mês</h2>
+            {% if por_mes %}
+                <div class="grafico"><canvas id="grafico-mes"></canvas></div>
+            {% else %}
+                <p class="vazio">Sem dados no período.</p>
+            {% endif %}
+        </section>
+        {% endif %}
+
+        <section class="painel">
+            <h2>Livros por categoria</h2>
+            {% if por_categoria %}
+                <div class="grafico"><canvas id="grafico-categoria"></canvas></div>
+            {% else %}
+                <p class="vazio">Sem dados no período.</p>
+            {% endif %}
+        </section>
+
+        <section class="painel">
+            <h2>Autores com mais livros</h2>
+            <table class="ranking">
+                {% for item in ranking %}
+                <tr>
+                    <td>{{ item.autor__nome }}</td>
+                    <td class="numero">{{ item.total }}</td>
+                </tr>
+                {% empty %}
+                <tr><td>Sem dados no período.</td></tr>
+                {% endfor %}
+            </table>
+        </section>
+    </div>
+</div>
+
+{{ por_categoria|json_script:"dados-categoria" }}
+{% if mostra_series %}{{ por_mes|json_script:"dados-mes" }}{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="{% static 'js/dashboard.js' %}?v=1"></script>
+{% endblock %}

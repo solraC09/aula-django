@@ -1,13 +1,19 @@
+import csv
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Count
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from core.utils import exigir_admin, org_atual
+from core.utils import exigir_admin, org_atual, perfil_atual
+
+from .dashboard import filtrar_periodo, livros_da_organizacao, montar_dashboard
 
 from .forms import AutorForm, LivroForm
 from .models import Autor, Livro
@@ -180,3 +186,56 @@ def excluir_autor(request, pk):
         'autor': autor,
         'total_livros': total_livros,
     })
+
+
+@login_required
+def dashboard(request):
+    org = org_atual(request)
+    eh_admin = perfil_atual(request).eh_admin
+    form, base = filtrar_periodo(request.GET, livros_da_organizacao(org))
+
+    contexto = montar_dashboard(base, com_series=eh_admin)
+    contexto.update({
+        'organizacao': org,
+        'form': form,
+        'mostra_series': eh_admin,
+        'filtros': request.GET.urlencode(),
+    })
+    return render(request, 'acervo/dashboard.html', contexto)
+
+
+def celula_segura(valor):
+    texto = '' if valor is None else str(valor)
+    if texto[:1] in ('=', '+', '-', '@'):
+        return "'" + texto
+    return texto
+
+
+@login_required
+def exportar_csv(request):
+    exigir_admin(request)
+    org = org_atual(request)
+    _, livros = filtrar_periodo(request.GET, livros_da_organizacao(org))
+    livros = livros.select_related('autor', 'cadastrado_por').order_by('titulo')
+
+    resposta = HttpResponse(content_type='text/csv; charset=utf-8')
+    resposta['Content-Disposition'] = 'attachment; filename="livros.csv"'
+    resposta.write('\ufeff')
+
+    escritor = csv.writer(resposta, delimiter=';')
+    escritor.writerow([
+        'Título', 'Autor', 'Ano', 'Tipo', 'Categoria',
+        'Disponível', 'Cadastrado por', 'Cadastrado em',
+    ])
+    for livro in livros:
+        escritor.writerow([celula_segura(valor) for valor in [
+            livro.titulo,
+            livro.autor.nome,
+            livro.ano,
+            livro.get_tipo_display(),
+            livro.get_categoria_display(),
+            'Sim' if livro.disponivel else 'Não',
+            livro.cadastrado_por.username if livro.cadastrado_por else '',
+            timezone.localtime(livro.cadastrado_em).strftime('%d/%m/%Y %H:%M'),
+        ]])
+    return resposta

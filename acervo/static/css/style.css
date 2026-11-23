@@ -30,6 +30,7 @@ form {
 }
 
 form input[type="text"],
+form input[type="date"],
 form select {
     font-family: inherit;
     padding: 0.5rem;
@@ -205,8 +206,24 @@ tr:hover {
     font-size: 1.3rem;
     font-weight: bold;
     text-decoration: none;
-    margin-right: auto;
     white-space: nowrap;
+}
+
+.topo-nav {
+    display: flex;
+    gap: 1.25rem;
+    margin-right: auto;
+}
+
+.topo-nav a {
+    color: #f4ecd8;
+    text-decoration: none;
+    opacity: 0.85;
+}
+
+.topo-nav a:hover {
+    opacity: 1;
+    text-decoration: underline;
 }
 
 .topo-info {
@@ -386,4 +403,85 @@ tr:hover {
     font-weight: bold;
     color: #8b5e34;
     margin: 0;
+}
+
+/* Dashboard */
+
+.filtro-periodo .exportar {
+    margin-left: auto;
+}
+
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.card {
+    background-color: #fffdf7;
+    border: 1px solid #c9a876;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+}
+
+.card small {
+    display: block;
+    color: #7a5c45;
+}
+
+.card strong {
+    display: block;
+    font-size: 2rem;
+    color: #5c3a21;
+    margin-top: 0.25rem;
+}
+
+.paineis {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+@media (max-width: 800px) {
+    .paineis {
+        grid-template-columns: 1fr;
+    }
+}
+
+.painel {
+    background-color: #fffdf7;
+    border: 1px solid #c9a876;
+    border-radius: 4px;
+    padding: 1rem 1.25rem;
+}
+
+.painel-largo {
+    grid-column: 1 / -1;
+}
+
+.painel h2 {
+    font-size: 1.1rem;
+    color: #5c3a21;
+    margin: 0 0 0.75rem;
+}
+
+.grafico {
+    position: relative;
+    height: 260px;
+}
+
+.ranking {
+    box-shadow: none;
+}
+
+.ranking .numero {
+    text-align: right;
+    font-weight: bold;
+    color: #5c3a21;
+}
+
+.vazio {
+    color: #7a5c45;
+    font-style: italic;
 }
