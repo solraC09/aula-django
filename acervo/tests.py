@@ -1,6 +1,10 @@
+from datetime import datetime
+
 from django.contrib.auth.models import User
 from django.contrib.messages import get_messages
+from django.db import connection
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from django.utils import timezone
 
@@ -463,3 +467,194 @@ class IsolamentoApiTests(IsolamentoBase):
     def test_api_sem_login_e_bloqueada(self):
         self.client.logout()
         self.assertIn(self.client.get('/api/livros/').status_code, (401, 403))
+
+
+def em(ano, mes, dia=15):
+    return timezone.make_aware(datetime(ano, mes, dia, 12, 0))
+
+
+class DashboardBase(IsolamentoBase):
+    @classmethod
+    def setUpTestData(cls):
+        super().setUpTestData()
+        cls.clarice = Autor.objects.create(organizacao=cls.org_a, nome='Clarice Lispector')
+        Livro.objects.filter(pk=cls.livro_a.pk).update(cadastrado_em=em(2026, 1))
+        Livro.objects.create(
+            organizacao=cls.org_a, titulo='A Hora da Estrela', autor=cls.clarice,
+            ano=1977, categoria='800', cadastrado_em=em(2026, 3),
+        )
+        Livro.objects.create(
+            organizacao=cls.org_a, titulo='Memórias Póstumas', autor=cls.autor_a,
+            ano=1881, categoria='800', disponivel=False, cadastrado_em=em(2026, 3),
+        )
+        for n in range(4):
+            Livro.objects.create(
+                organizacao=cls.org_b, titulo=f'Livro B {n}', autor=cls.autor_b,
+                ano=1900, cadastrado_em=em(2026, 2),
+            )
+
+
+class DashboardTests(DashboardBase):
+    def test_indicadores_so_da_propria_organizacao(self):
+        resposta = self.client.get(reverse('dashboard'))
+        self.assertEqual(resposta.context['indicadores'], {
+            'total': 3, 'disponiveis': 2, 'indisponiveis': 1, 'autores': 2,
+        })
+
+    def test_outra_organizacao_ve_os_proprios_numeros(self):
+        self.client.force_login(self.user_b)
+        resposta = self.client.get(reverse('dashboard'))
+        self.assertEqual(resposta.context['indicadores']['total'], 5)
+
+    def test_ranking_de_autores(self):
+        resposta = self.client.get(reverse('dashboard'))
+        self.assertEqual(resposta.context['ranking'], [
+            {'autor__nome': 'Machado de Assis', 'total': 2},
+            {'autor__nome': 'Clarice Lispector', 'total': 1},
+        ])
+
+    def test_livros_por_mes_em_ordem(self):
+        resposta = self.client.get(reverse('dashboard'))
+        self.assertEqual(resposta.context['por_mes'], [
+            {'mes': '01/2026', 'total': 1},
+            {'mes': '03/2026', 'total': 2},
+        ])
+
+    def test_livros_por_categoria_com_nome(self):
+        resposta = self.client.get(reverse('dashboard'))
+        self.assertEqual(resposta.context['por_categoria'], [
+            {'categoria': '000 – Generalidades e Informação', 'total': 1},
+            {'categoria': '800 – Literatura', 'total': 2},
+        ])
+
+    def test_filtro_por_periodo(self):
+        resposta = self.client.get(reverse('dashboard'), {'inicio': '2026-03-01', 'fim': '2026-03-31'})
+        self.assertEqual(resposta.context['indicadores']['total'], 2)
+        self.assertEqual(resposta.context['por_mes'], [{'mes': '03/2026', 'total': 2}])
+
+    def test_data_invalida_nao_quebra_e_ignora_o_filtro(self):
+        resposta = self.client.get(reverse('dashboard'), {'inicio': 'abc'})
+        self.assertEqual(resposta.status_code, 200)
+        self.assertEqual(resposta.context['indicadores']['total'], 3)
+        self.assertContains(resposta, 'O filtro foi ignorado.')
+
+    def test_inicio_depois_do_fim_mostra_erro(self):
+        resposta = self.client.get(reverse('dashboard'), {'inicio': '2026-05-01', 'fim': '2026-01-01'})
+        self.assertContains(resposta, 'não pode ser depois da data de fim')
+
+    def test_dashboard_vazio_nao_da_erro(self):
+        org_c = Organizacao.objects.create(nome='Biblioteca C')
+        carla = User.objects.create_user('carla', password='senha-teste-123')
+        Perfil.objects.create(usuario=carla, organizacao=org_c, papel=Perfil.ADMIN)
+        self.client.force_login(carla)
+        resposta = self.client.get(reverse('dashboard'))
+        self.assertEqual(resposta.context['indicadores']['total'], 0)
+        self.assertContains(resposta, 'Sem dados no período.')
+
+    def test_operador_nao_ve_serie_nem_exportacao(self):
+        self.client.force_login(self.operador_a)
+        resposta = self.client.get(reverse('dashboard'))
+        self.assertFalse(resposta.context['mostra_series'])
+        self.assertNotIn('por_mes', resposta.context)
+        self.assertNotContains(resposta, 'Exportar CSV')
+        self.assertEqual(resposta.context['indicadores']['total'], 3)
+
+    def test_sem_login_redireciona(self):
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse('dashboard')).status_code, 302)
+
+
+class ExportarCsvTests(DashboardBase):
+    def conteudo(self, resposta):
+        return resposta.content.decode('utf-8-sig')
+
+    def test_admin_baixa_csv_so_da_propria_organizacao(self):
+        resposta = self.client.get(reverse('exportar_csv'))
+        self.assertEqual(resposta['Content-Type'], 'text/csv; charset=utf-8')
+        self.assertIn('attachment', resposta['Content-Disposition'])
+        texto = self.conteudo(resposta)
+        self.assertIn('Título;Autor;Ano', texto)
+        self.assertIn('Dom Casmurro', texto)
+        self.assertNotIn('Livro B', texto)
+        self.assertEqual(len(texto.strip().splitlines()), 4)
+
+    def test_csv_respeita_o_periodo(self):
+        resposta = self.client.get(reverse('exportar_csv'), {'inicio': '2026-03-01'})
+        texto = self.conteudo(resposta)
+        self.assertNotIn('Dom Casmurro', texto)
+        self.assertIn('A Hora da Estrela', texto)
+
+    def test_csv_neutraliza_formulas(self):
+        Livro.objects.create(
+            organizacao=self.org_a, titulo='=1+1', autor=self.autor_a, ano=2000,
+        )
+        texto = self.conteudo(self.client.get(reverse('exportar_csv')))
+        self.assertIn("'=1+1", texto)
+
+    def test_operador_nao_exporta(self):
+        self.client.force_login(self.operador_a)
+        self.assertEqual(self.client.get(reverse('exportar_csv')).status_code, 403)
+
+
+class DashboardApiTests(DashboardBase):
+    def test_api_devolve_as_metricas_da_organizacao(self):
+        dados = self.client.get('/api/dashboard/').json()
+        self.assertEqual(dados['indicadores']['total'], 3)
+        self.assertIn('por_mes', dados)
+
+    def test_api_do_operador_nao_tem_serie(self):
+        self.client.force_login(self.operador_a)
+        dados = self.client.get('/api/dashboard/').json()
+        self.assertNotIn('por_mes', dados)
+
+    def test_api_recusa_data_invalida(self):
+        resposta = self.client.get('/api/dashboard/', {'inicio': 'abc'})
+        self.assertEqual(resposta.status_code, 400)
+        self.assertIn('inicio', resposta.json())
+
+    def test_api_sem_login_e_bloqueada(self):
+        self.client.logout()
+        self.assertIn(self.client.get('/api/dashboard/').status_code, (401, 403))
+
+
+class ConsultasTests(IsolamentoBase):
+    def contar_consultas(self, url):
+        with CaptureQueriesContext(connection) as contexto:
+            self.client.get(url)
+        return len(contexto)
+
+    def criar_livros(self, quantidade, inicio):
+        for n in range(inicio, inicio + quantidade):
+            Livro.objects.create(
+                organizacao=self.org_a, titulo=f'Livro {n:03d}', autor=self.autor_a,
+                ano=2000, cadastrado_por=self.user_a,
+            )
+
+    def assert_nao_cresce_com_mais_livros(self, url):
+        self.criar_livros(3, 0)
+        antes = self.contar_consultas(url)
+        self.criar_livros(10, 100)
+        depois = self.contar_consultas(url)
+        self.assertEqual(antes, depois, f'{url}: {antes} consultas com 4 livros, {depois} com 14')
+
+    def test_lista_de_livros_sem_n_mais_1(self):
+        self.assert_nao_cresce_com_mais_livros(reverse('lista'))
+
+    def test_dashboard_sem_n_mais_1(self):
+        self.assert_nao_cresce_com_mais_livros(reverse('dashboard'))
+
+    def test_csv_sem_n_mais_1(self):
+        self.assert_nao_cresce_com_mais_livros(reverse('exportar_csv'))
+
+    def test_api_de_livros_sem_n_mais_1(self):
+        self.assert_nao_cresce_com_mais_livros('/api/livros/')
+
+    def test_csv_usa_select_related(self):
+        self.criar_livros(5, 0)
+        with self.assertNumQueries(1):
+            livros = (
+                Livro.objects.filter(organizacao=self.org_a, cadastrado_por=self.user_a)
+                .select_related('autor', 'cadastrado_por')
+            )
+            for livro in livros:
+                livro.autor.nome, livro.cadastrado_por.username
